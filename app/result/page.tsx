@@ -172,13 +172,24 @@ function ResultPageContent() {
       // Wait for all images to load before generating
       await waitForImages(cardRef.current)
       
+      // Additional delay to ensure everything is fully rendered (especially on mobile)
+      await new Promise(resolve => setTimeout(resolve, 300))
+      
+      // Detect device pixel ratio for optimal quality (mobile devices often have high DPI)
+      const devicePixelRatio = window.devicePixelRatio || 2
+      // Use higher pixel ratio for better quality, especially on mobile
+      // Mobile devices typically have devicePixelRatio of 2-3, so this ensures high quality
+      const pixelRatio = Math.min(Math.max(devicePixelRatio * 1.2, 2.5), 3) // Between 2.5 and 3
+      
       // Generate high-quality image for sharing (1080x1920 for IG Story format)
       const dataUrl = await toPng(cardRef.current, {
         quality: 1.0,
-        pixelRatio: 2, // Reduced from 3 for better performance, still high quality
+        pixelRatio: pixelRatio, // Higher quality, especially for mobile high-DPI screens
         backgroundColor: '#fef3f8',
         cacheBust: true,
         fontEmbedCSS: '', // Ensure fonts are embedded
+        width: 1080, // Explicit width to ensure consistency
+        height: 1920, // Explicit height to ensure consistency
       })
       
       // Convert data URL to blob
@@ -265,13 +276,24 @@ function ResultPageContent() {
       // Wait for all images to load before generating
       await waitForImages(cardRef.current)
       
+      // Additional delay to ensure everything is fully rendered (especially on mobile)
+      await new Promise(resolve => setTimeout(resolve, 300))
+      
+      // Detect device pixel ratio for optimal quality (mobile devices often have high DPI)
+      const devicePixelRatio = window.devicePixelRatio || 2
+      // Use higher pixel ratio for better quality, especially on mobile
+      // Mobile devices typically have devicePixelRatio of 2-3, so this ensures high quality
+      const pixelRatio = Math.min(Math.max(devicePixelRatio * 1.2, 2.5), 3) // Between 2.5 and 3
+      
       // Generate high-quality image (1080x1920 for IG Story format)
       const dataUrl = await toPng(cardRef.current, {
         quality: 1.0,
-        pixelRatio: 2, // Reduced from 3 for better performance, still high quality
+        pixelRatio: pixelRatio, // Higher quality, especially for mobile high-DPI screens
         backgroundColor: '#fef3f8',
         cacheBust: true,
         fontEmbedCSS: '', // Ensure fonts are embedded
+        width: 1080, // Explicit width to ensure consistency
+        height: 1920, // Explicit height to ensure consistency
       })
       
       // Convert to blob for better mobile compatibility
@@ -365,8 +387,24 @@ function ResultPageContent() {
     <>
       {/* Hidden Shareable Card for Image Generation - IG Story Format (9:16) */}
       {result && (
-        <div className="fixed -left-[9999px] -top-[9999px] opacity-0 pointer-events-none" style={{ width: '1080px', height: '1920px' }}>
-          <div ref={cardRef} style={{ width: '1080px', height: '1920px' }}>
+        <div 
+          className="fixed -left-[9999px] -top-[9999px] opacity-0 pointer-events-none" 
+          style={{ 
+            width: '1080px', 
+            height: '1920px',
+            overflow: 'hidden',
+            position: 'absolute',
+          }}
+        >
+          <div 
+            ref={cardRef} 
+            style={{ 
+              width: '1080px', 
+              height: '1920px',
+              position: 'relative',
+              overflow: 'hidden',
+            }}
+          >
             <ShareableCard
               displayName={displayName}
               connections={result.connections}
