@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
           console.warn('Missing sessionId or email in checkout session:', {
             sessionId,
             customerEmail,
-            sessionId: session.id,
+            stripeSessionId: session.id,
           })
         }
         break
