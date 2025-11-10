@@ -61,7 +61,7 @@ export default function ShareableCard({
         position: 'relative',
       }}
     >
-      {/* Album Cover Backgrounds - Subtle and Elegant */}
+      {/* Album Cover Backgrounds - Elegant and Visible */}
       {albumCovers.map((album, index) => (
         <div
           key={index}
@@ -71,8 +71,8 @@ export default function ShareableCard({
             width: `${album.position.size}px`,
             height: `${album.position.size}px`,
             transform: `rotate(${album.position.rotation}deg)`,
-            opacity: 0.08,
-            filter: 'blur(8px)',
+            opacity: 0.16,
+            filter: 'blur(6px) saturate(1.1)',
             zIndex: 1,
           }}
         >
@@ -87,11 +87,11 @@ export default function ShareableCard({
         </div>
       ))}
       
-      {/* White overlay to ensure text readability */}
+      {/* Elegant overlay to ensure text readability while showing album covers */}
       <div 
         className="absolute inset-0"
         style={{
-          background: 'linear-gradient(180deg, rgba(254, 243, 248, 0.4) 0%, rgba(245, 243, 255, 0.3) 30%, rgba(254, 243, 248, 0.4) 50%, rgba(245, 243, 255, 0.3) 70%, rgba(254, 243, 248, 0.4) 100%)',
+          background: 'linear-gradient(180deg, rgba(254, 243, 248, 0.32) 0%, rgba(245, 243, 255, 0.25) 30%, rgba(254, 243, 248, 0.32) 50%, rgba(245, 243, 255, 0.25) 70%, rgba(254, 243, 248, 0.32) 100%)',
           zIndex: 2,
         }}
       />

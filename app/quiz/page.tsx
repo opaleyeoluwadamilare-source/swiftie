@@ -414,7 +414,7 @@ export default function QuizPage() {
                     handleNext()
                   }}
                   variant="outline"
-                  className="w-full py-3 sm:py-4 touch-manipulation min-h-[48px] sm:min-h-[52px] text-sm sm:text-base md:text-lg flex items-center justify-center"
+                  className="w-full py-3 sm:py-4 touch-manipulation min-h-[48px] sm:min-h-[52px] text-xs sm:text-sm md:text-base flex items-center justify-center px-3 sm:px-4 whitespace-nowrap"
                 >
                   Skip this question
                 </Button>
@@ -527,9 +527,10 @@ export default function QuizPage() {
                     handleNext()
                   }}
                   variant="outline"
-                  className="w-full py-3 sm:py-4 touch-manipulation min-h-[48px] sm:min-h-[52px] text-sm sm:text-base md:text-lg flex items-center justify-center whitespace-normal sm:whitespace-nowrap"
+                  className="w-full py-3 sm:py-4 touch-manipulation min-h-[48px] sm:min-h-[52px] text-xs sm:text-sm md:text-base flex items-center justify-center px-3 sm:px-4 whitespace-nowrap"
                 >
-                  Continue as &quot;Swiftie&quot;
+                  <span className="hidden sm:inline">Continue as &quot;Swiftie&quot;</span>
+                  <span className="sm:hidden">Continue as Swiftie</span>
                 </Button>
               </div>
             </div>
@@ -556,14 +557,21 @@ export default function QuizPage() {
               disabled={!canProceed()}
               className={cn(
                 'flex-1 py-3 sm:py-4 touch-manipulation min-h-[48px] sm:min-h-[52px]',
-                'text-sm sm:text-base md:text-lg',
-                'whitespace-nowrap overflow-hidden text-ellipsis',
+                'text-xs sm:text-sm md:text-base lg:text-lg',
                 'flex items-center justify-center gap-1 sm:gap-2',
+                'px-3 sm:px-4',
                 currentQuestion === 1 && 'ml-auto'
               )}
             >
-              <span className="truncate">
-                {currentQuestion === totalQuestions ? 'Find My Connection!' : 'Next'}
+              <span className="whitespace-nowrap">
+                {currentQuestion === totalQuestions ? (
+                  <>
+                    <span className="hidden sm:inline">Find My Connection!</span>
+                    <span className="sm:hidden">Find Connection!</span>
+                  </>
+                ) : (
+                  'Next'
+                )}
               </span>
               <span className="flex-shrink-0">→</span>
             </Button>

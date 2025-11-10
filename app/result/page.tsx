@@ -18,6 +18,7 @@ function ResultPageContent() {
   const [error, setError] = useState<string | null>(null)
   const [showUnlock, setShowUnlock] = useState(false)
   const [isGeneratingImage, setIsGeneratingImage] = useState(false)
+  const [isSharing, setIsSharing] = useState(false)
   const [selectedAmount, setSelectedAmount] = useState<number | null>(13)
   const [customAmount, setCustomAmount] = useState<string>('')
   const [amountError, setAmountError] = useState<string | null>(null)
@@ -93,20 +94,22 @@ function ResultPageContent() {
   }, [sessionId, searchParams])
 
   const handleShare = async () => {
-    if (!result || !cardRef.current) return
+    if (!result || !cardRef.current || isSharing) return
     
-    // Clean and format the name for sharing
-    const rawFirstName = result.firstName?.trim() || ''
-    const shareName = rawFirstName !== '' ? rawFirstName : 'Swiftie'
-    const hasFirstName = rawFirstName !== ''
-    
-    // Personalized share message with website URL
-    const shareText = hasFirstName
-      ? `${shareName} is ${result.connections} connections from Taylor Swift! In the top ${result.rarity} of Swifties! 💜 Find your connection at swifties.getsanely.com`
-      : `I'm ${result.connections} connections from Taylor Swift! In the top ${result.rarity} of Swifties! 💜 Find your connection at swifties.getsanely.com`
+    setIsSharing(true)
     
     try {
-      // Generate image for sharing (1080x1920 for IG Story format)
+      // Clean and format the name for sharing
+      const rawFirstName = result.firstName?.trim() || ''
+      const shareName = rawFirstName !== '' ? rawFirstName : 'Swiftie'
+      const hasFirstName = rawFirstName !== ''
+      
+      // Personalized share message with website URL
+      const shareText = hasFirstName
+        ? `${shareName} is ${result.connections} connections from Taylor Swift! In the top ${result.rarity} of Swifties! 💜 Find your connection at swifties.getsanely.com`
+        : `I'm ${result.connections} connections from Taylor Swift! In the top ${result.rarity} of Swifties! 💜 Find your connection at swifties.getsanely.com`
+      
+      // Generate high-quality image for sharing (1080x1920 for IG Story format)
       const dataUrl = await toPng(cardRef.current, {
         quality: 1.0,
         pixelRatio: 3, // Higher quality for crisp images (3x for retina displays)
@@ -117,50 +120,68 @@ function ResultPageContent() {
       // Convert data URL to blob
       const response = await fetch(dataUrl)
       const blob = await response.blob()
-      const file = new File([blob], `${shareName.toLowerCase().replace(/\s+/g, '-')}-taylor-connection.png`, { type: 'image/png' })
+      const fileName = `${shareName.toLowerCase().replace(/\s+/g, '-')}-taylor-connection-${result.connections}.png`
+      const file = new File([blob], fileName, { type: 'image/png' })
       
-      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+      // Try Web Share API with file (works on mobile and some desktop browsers)
+      if (navigator.share) {
+        const shareTitle = `${shareName} is ${result.connections} connections from Taylor Swift!`
+        
         try {
-          await navigator.share({
-            title: `${shareName} is ${result.connections} connections from Taylor Swift!`,
+          // Check if we can share files
+          const shareData: any = {
+            title: shareTitle,
             text: shareText,
-            files: [file],
             url: window.location.href,
-          })
-        } catch (err) {
-          // Fallback to text-only share
-          if (navigator.share) {
+          }
+          
+          // Try to share with file (for Instagram Stories, messaging apps)
+          if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            shareData.files = [file]
+          }
+          
+          await navigator.share(shareData)
+          // Success - user shared
+          return
+        } catch (shareError: any) {
+          // User cancelled or share failed
+          if (shareError.name === 'AbortError') {
+            // User cancelled - that's fine, just return
+            return
+          }
+          
+          // If file sharing failed, try without file
+          try {
             await navigator.share({
-              title: `${shareName} is ${result.connections} connections from Taylor Swift!`,
+              title: shareTitle,
               text: shareText,
               url: window.location.href,
             })
-          } else {
-            throw err
+            return
+          } catch (textShareError) {
+            // Continue to fallback
+            console.log('Text-only share also failed:', textShareError)
           }
         }
-      } else if (navigator.share) {
-        // Text-only share
-        await navigator.share({
-          title: `${shareName} is ${result.connections} connections from Taylor Swift!`,
-          text: shareText,
-          url: window.location.href,
-        })
-      } else {
-        // Fallback: copy to clipboard
-        navigator.clipboard.writeText(window.location.href)
-        alert('Link copied to clipboard!')
       }
+      
+      // Fallback: Download the image and show instructions
+      // This works for Instagram Stories (user can download and upload)
+      const link = document.createElement('a')
+      link.download = fileName
+      link.href = dataUrl
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      
+      // Show helpful message
+      alert(`Card downloaded! You can now:\n\n• Share to Instagram Stories: Open Instagram → Stories → Upload the downloaded image\n• Share to messaging apps: Attach the downloaded image\n\nOr copy this text to share:\n\n${shareText}`)
+      
     } catch (err) {
-      // User cancelled or error occurred
-      console.log('Share cancelled or failed:', err)
-      // Fallback: copy to clipboard
-      try {
-        navigator.clipboard.writeText(window.location.href)
-        alert('Link copied to clipboard!')
-      } catch (clipboardErr) {
-        console.error('Clipboard copy failed:', clipboardErr)
-      }
+      console.error('Share error:', err)
+      alert('Failed to share. Please try downloading the card instead.')
+    } finally {
+      setIsSharing(false)
     }
   }
 
@@ -315,21 +336,25 @@ function ResultPageContent() {
               <Button 
                 variant="outline" 
                 size="lg" 
-                className="flex-1 py-3 sm:py-4 touch-manipulation min-h-[48px] sm:min-h-[52px] text-sm sm:text-base md:text-lg flex items-center justify-center gap-2"
+                className="flex-1 py-3 sm:py-4 touch-manipulation min-h-[48px] sm:min-h-[52px] text-xs sm:text-sm md:text-base flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4"
                 onClick={handleShare}
+                disabled={isSharing}
               >
-                <span className="flex-shrink-0">📸</span>
-                <span className="truncate">Share My Card</span>
+                <span className="flex-shrink-0 text-base sm:text-lg">{isSharing ? '✨' : '📸'}</span>
+                <span className="whitespace-nowrap">{isSharing ? 'Sharing...' : 'Share My Card'}</span>
               </Button>
               <Button 
                 variant="outline" 
                 size="lg" 
-                className="flex-1 py-3 sm:py-4 touch-manipulation min-h-[48px] sm:min-h-[52px] text-sm sm:text-base md:text-lg flex items-center justify-center gap-2"
+                className="flex-1 py-3 sm:py-4 touch-manipulation min-h-[48px] sm:min-h-[52px] text-xs sm:text-sm md:text-base flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4"
                 onClick={handleDownload}
                 disabled={isGeneratingImage}
               >
-                <span className="flex-shrink-0">{isGeneratingImage ? '✨' : '📥'}</span>
-                <span className="truncate">{isGeneratingImage ? 'Generating...' : 'Download to Camera Roll'}</span>
+                <span className="flex-shrink-0 text-base sm:text-lg">{isGeneratingImage ? '✨' : '📥'}</span>
+                <span className="whitespace-nowrap">
+                  <span className="hidden sm:inline">{isGeneratingImage ? 'Generating...' : 'Download to Camera Roll'}</span>
+                  <span className="sm:hidden">{isGeneratingImage ? 'Generating...' : 'Download'}</span>
+                </span>
               </Button>
             </div>
 
@@ -368,10 +393,13 @@ function ResultPageContent() {
                 <Button
                   onClick={() => setShowUnlock(true)}
                   size="lg"
-                  className="w-full mb-4 sm:mb-6 py-3 sm:py-4 touch-manipulation min-h-[48px] sm:min-h-[52px] text-sm sm:text-base md:text-lg flex items-center justify-center gap-2"
+                  className="w-full mb-4 sm:mb-6 py-3 sm:py-4 touch-manipulation min-h-[48px] sm:min-h-[52px] text-xs sm:text-sm md:text-base flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4"
                 >
-                  <span>🔓</span>
-                  <span>Unlock Your Full Story</span>
+                  <span className="flex-shrink-0 text-base sm:text-lg">🔓</span>
+                  <span className="whitespace-nowrap">
+                    <span className="hidden sm:inline">Unlock Your Full Story</span>
+                    <span className="sm:hidden">Unlock Story</span>
+                  </span>
                 </Button>
               ) : (
                 <div className="space-y-4 sm:space-y-5 md:space-y-6">
@@ -488,7 +516,7 @@ function ResultPageContent() {
                           <Button
                             variant="secondary"
                             size="lg"
-                            className="w-full mt-2 bg-white text-purple-gradient-start hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed py-3 sm:py-4 touch-manipulation min-h-[48px] sm:min-h-[52px] text-sm sm:text-base md:text-lg flex items-center justify-center"
+                            className="w-full mt-2 bg-white text-purple-gradient-start hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed py-3 sm:py-4 touch-manipulation min-h-[48px] sm:min-h-[52px] text-xs sm:text-sm md:text-base flex items-center justify-center px-3 sm:px-4 whitespace-nowrap"
                       onClick={async () => {
                         const finalAmount = customAmount ? parseFloat(customAmount) : (selectedAmount || 13)
                         if (finalAmount && finalAmount >= 13) {
@@ -551,13 +579,13 @@ function ResultPageContent() {
               <Button
                 onClick={() => router.push('/quiz')}
                 variant="outline"
-                className="flex-1 py-3 sm:py-4 touch-manipulation min-h-[48px] sm:min-h-[52px] text-sm sm:text-base md:text-lg flex items-center justify-center"
+                className="flex-1 py-3 sm:py-4 touch-manipulation min-h-[48px] sm:min-h-[52px] text-xs sm:text-sm md:text-base flex items-center justify-center px-3 sm:px-4 whitespace-nowrap"
               >
                 Take Quiz Again
               </Button>
               <Button
                 onClick={() => router.push('/')}
-                className="flex-1 py-3 sm:py-4 touch-manipulation min-h-[48px] sm:min-h-[52px] text-sm sm:text-base md:text-lg flex items-center justify-center"
+                className="flex-1 py-3 sm:py-4 touch-manipulation min-h-[48px] sm:min-h-[52px] text-xs sm:text-sm md:text-base flex items-center justify-center px-3 sm:px-4 whitespace-nowrap"
               >
                 Back to Home
               </Button>

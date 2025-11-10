@@ -39,7 +39,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       'active:scale-[0.98]',
       'overflow-hidden',
       'text-center',
-      'px-4 sm:px-6 md:px-8',
+      'px-3 sm:px-5 md:px-7',
       className
     )
 
