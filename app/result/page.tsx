@@ -93,6 +93,42 @@ function ResultPageContent() {
     fetchResult()
   }, [sessionId, searchParams])
 
+  // Helper function to wait for all images to load
+  const waitForImages = (element: HTMLElement): Promise<void> => {
+    return new Promise((resolve) => {
+      const images = element.querySelectorAll('img')
+      if (images.length === 0) {
+        resolve()
+        return
+      }
+      
+      let loadedCount = 0
+      const totalImages = images.length
+      
+      const checkComplete = () => {
+        loadedCount++
+        if (loadedCount === totalImages) {
+          // Small delay to ensure rendering is complete
+          setTimeout(resolve, 200)
+        }
+      }
+      
+      images.forEach((img) => {
+        if (img.complete && img.naturalWidth > 0) {
+          checkComplete()
+        } else {
+          img.onload = checkComplete
+          img.onerror = checkComplete // Continue even if image fails
+        }
+      })
+      
+      // Timeout after 5 seconds
+      setTimeout(() => {
+        resolve()
+      }, 5000)
+    })
+  }
+
   const handleShare = async () => {
     if (!result || !cardRef.current || isSharing) return
     
@@ -109,12 +145,16 @@ function ResultPageContent() {
         ? `${shareName} is ${result.connections} connections from Taylor Swift! In the top ${result.rarity} of Swifties! 💜 Find your connection at swifties.getsanely.com`
         : `I'm ${result.connections} connections from Taylor Swift! In the top ${result.rarity} of Swifties! 💜 Find your connection at swifties.getsanely.com`
       
+      // Wait for all images to load before generating
+      await waitForImages(cardRef.current)
+      
       // Generate high-quality image for sharing (1080x1920 for IG Story format)
       const dataUrl = await toPng(cardRef.current, {
         quality: 1.0,
-        pixelRatio: 3, // Higher quality for crisp images (3x for retina displays)
+        pixelRatio: 2, // Reduced from 3 for better performance, still high quality
         backgroundColor: '#fef3f8',
         cacheBust: true,
+        fontEmbedCSS: '', // Ensure fonts are embedded
       })
       
       // Convert data URL to blob
@@ -167,12 +207,21 @@ function ResultPageContent() {
       
       // Fallback: Download the image and show instructions
       // This works for Instagram Stories (user can download and upload)
+      // Reuse the blob we already created
+      const blobUrl = URL.createObjectURL(blob)
+      
       const link = document.createElement('a')
       link.download = fileName
-      link.href = dataUrl
+      link.href = blobUrl
+      link.style.display = 'none'
       document.body.appendChild(link)
       link.click()
-      document.body.removeChild(link)
+      
+      // Clean up after a delay
+      setTimeout(() => {
+        document.body.removeChild(link)
+        URL.revokeObjectURL(blobUrl)
+      }, 100)
       
       // Show helpful message
       alert(`Card downloaded! You can now:\n\n• Share to Instagram Stories: Open Instagram → Stories → Upload the downloaded image\n• Share to messaging apps: Attach the downloaded image\n\nOr copy this text to share:\n\n${shareText}`)
@@ -186,29 +235,44 @@ function ResultPageContent() {
   }
 
   const handleDownload = async () => {
-    if (!result || !cardRef.current) return
+    if (!result || !cardRef.current || isGeneratingImage) return
     
     setIsGeneratingImage(true)
     
     try {
       const displayNameForFile = result.firstName || 'Swiftie'
+      const fileName = `${displayNameForFile.toLowerCase().replace(/\s+/g, '-')}-taylor-connection-${result.connections}.png`
+      
+      // Wait for all images to load before generating
+      await waitForImages(cardRef.current)
       
       // Generate high-quality image (1080x1920 for IG Story format)
       const dataUrl = await toPng(cardRef.current, {
         quality: 1.0,
-        pixelRatio: 3, // Higher quality for crisp images (3x for retina displays)
+        pixelRatio: 2, // Reduced from 3 for better performance, still high quality
         backgroundColor: '#fef3f8',
         cacheBust: true,
+        fontEmbedCSS: '', // Ensure fonts are embedded
       })
+      
+      // Convert to blob for better mobile compatibility
+      const imageResponse = await fetch(dataUrl)
+      const imageBlob = await imageResponse.blob()
+      const blobUrl = URL.createObjectURL(imageBlob)
       
       // Create download link
       const link = document.createElement('a')
-      const fileName = `${displayNameForFile.toLowerCase().replace(/\s+/g, '-')}-taylor-connection-${result.connections}.png`
       link.download = fileName
-      link.href = dataUrl
+      link.href = blobUrl
+      link.style.display = 'none'
       document.body.appendChild(link)
       link.click()
-      document.body.removeChild(link)
+      
+      // Clean up after a delay
+      setTimeout(() => {
+        document.body.removeChild(link)
+        URL.revokeObjectURL(blobUrl)
+      }, 100)
       
       setIsGeneratingImage(false)
     } catch (error) {
