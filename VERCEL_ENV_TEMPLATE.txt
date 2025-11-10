@@ -1,0 +1,52 @@
+# Copy these environment variables to Vercel Dashboard
+# Go to: Your Project → Settings → Environment Variables
+# Add each variable one by one, or paste this entire block
+
+# ============================================
+# REQUIRED ENVIRONMENT VARIABLES FOR VERCEL
+# ============================================
+
+# Application Environment
+NODE_ENV=production
+
+# Application URL (update after first deployment with your Vercel URL)
+NEXT_PUBLIC_BASE_URL=https://your-app-name.vercel.app
+
+# ============================================
+# STRIPE CONFIGURATION
+# Get your keys from: https://dashboard.stripe.com/apikeys
+# ============================================
+
+STRIPE_SECRET_KEY=sk_live_your_stripe_secret_key_here
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_your_stripe_publishable_key_here
+
+# ============================================
+# STRIPE WEBHOOK SECRET (ADD THIS LATER!)
+# ============================================
+# ⚠️ SKIP THIS FOR INITIAL DEPLOYMENT ⚠️
+# Add this AFTER:
+#   1. App is deployed to Vercel
+#   2. You have your Vercel URL
+#   3. You set up Stripe webhook pointing to: https://your-app.vercel.app/api/webhook/stripe
+#   4. Stripe generates the webhook secret
+# Get from: Stripe Dashboard → Developers → Webhooks → Your Webhook → Signing Secret
+# STRIPE_WEBHOOK_SECRET=whsec_your_webhook_secret_here
+
+# ============================================
+# DATABASE CONFIGURATION
+# Get your database URL from Render dashboard
+# ============================================
+
+# For Vercel, use the EXTERNAL URL (with .oregon-postgres.render.com)
+DATABASE_URL=postgresql://username:password@host.oregon-postgres.render.com/database_name
+
+# ============================================
+# INSTRUCTIONS:
+# ============================================
+# 1. Replace all placeholders with your actual values
+# 2. Go to Vercel Dashboard → Your Project → Settings → Environment Variables
+# 3. Add each variable (or paste the entire block)
+# 4. Make sure to select "Production", "Preview", and "Development" environments
+# 5. After first deployment, update NEXT_PUBLIC_BASE_URL with your actual Vercel URL
+# 6. Set up Stripe webhook pointing to: https://your-app-name.vercel.app/api/webhook/stripe
+

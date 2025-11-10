@@ -1,0 +1,24 @@
+# ============================================
+# COPY THESE TO VERCEL ENVIRONMENT VARIABLES
+# ============================================
+
+# 1. Just type "production" (no quotes needed in Vercel)
+NODE_ENV=production
+
+# 2. Use placeholder for now, update after deployment
+NEXT_PUBLIC_BASE_URL=https://placeholder.vercel.app
+
+# 3. Replace with your actual Stripe Secret Key
+STRIPE_SECRET_KEY=sk_live_YOUR_ACTUAL_KEY_HERE
+
+# 4. Replace with your actual Stripe Publishable Key  
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_YOUR_ACTUAL_KEY_HERE
+
+# 5. Replace with your actual Database URL from Render
+DATABASE_URL=postgresql://YOUR_ACTUAL_DATABASE_URL_HERE
+
+# ============================================
+# SKIP THIS FOR NOW (add after webhook setup):
+# ============================================
+# STRIPE_WEBHOOK_SECRET=whsec_your_webhook_secret_here
+

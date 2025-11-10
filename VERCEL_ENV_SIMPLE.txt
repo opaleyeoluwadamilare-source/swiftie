@@ -1,0 +1,32 @@
+# ============================================
+# MINIMUM REQUIRED FOR FIRST DEPLOYMENT
+# ============================================
+# Add these to Vercel → Settings → Environment Variables
+
+# 1. Set this to "production" (just type: production)
+NODE_ENV=production
+
+# 2. Use placeholder for now, update after deployment with your actual Vercel URL
+NEXT_PUBLIC_BASE_URL=https://placeholder.vercel.app
+
+# 3. Your Stripe Secret Key (from Stripe Dashboard → API Keys)
+STRIPE_SECRET_KEY=sk_live_YOUR_ACTUAL_KEY_HERE
+
+# 4. Your Stripe Publishable Key (from Stripe Dashboard → API Keys)
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_YOUR_ACTUAL_KEY_HERE
+
+# 5. Your Database URL (from Render Dashboard → PostgreSQL → External Connection String)
+DATABASE_URL=postgresql://YOUR_ACTUAL_DATABASE_URL_HERE
+
+# ============================================
+# WHAT YOU NEED TO GET:
+# ============================================
+# 
+# ✅ NODE_ENV - Just type: production
+# ✅ NEXT_PUBLIC_BASE_URL - Use placeholder above, update later
+# ✅ STRIPE_SECRET_KEY - Get from: https://dashboard.stripe.com/apikeys
+# ✅ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY - Get from: https://dashboard.stripe.com/apikeys
+# ✅ DATABASE_URL - Get from: Render Dashboard → Your Database → External Connection String
+#
+# ❌ SKIP FOR NOW: STRIPE_WEBHOOK_SECRET (add after webhook setup)
+

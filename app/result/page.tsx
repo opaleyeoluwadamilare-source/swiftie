@@ -1,7 +1,7 @@
 ﻿'use client'
 
 import { useSearchParams, useRouter } from 'next/navigation'
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, Suspense } from 'react'
 import { cn } from '@/lib/utils'
 import Button from '@/components/ui/Button'
 import VisualPath from '@/components/VisualPath'
@@ -9,7 +9,7 @@ import ShareableCard from '@/components/ShareableCard'
 import { toPng } from 'html-to-image'
 import { calculateConnectionResult } from '@/lib/connectionCalculator'
 
-export default function ResultPage() {
+function ResultPageContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const sessionId = searchParams.get('session')
@@ -555,5 +555,20 @@ export default function ResultPage() {
         </div>
       </div>
     </>
+  )
+}
+
+export default function ResultPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center gradient-bg">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto mb-4"></div>
+          <p className="text-white text-lg">Loading your results...</p>
+        </div>
+      </div>
+    }>
+      <ResultPageContent />
+    </Suspense>
   )
 }
