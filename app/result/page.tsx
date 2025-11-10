@@ -132,7 +132,7 @@ function ResultPageContent() {
           const shareData: any = {
             title: shareTitle,
             text: shareText,
-            url: window.location.href,
+            url: 'https://swifties.getsanely.com',
           }
           
           // Try to share with file (for Instagram Stories, messaging apps)
@@ -155,7 +155,7 @@ function ResultPageContent() {
             await navigator.share({
               title: shareTitle,
               text: shareText,
-              url: window.location.href,
+              url: 'https://swifties.getsanely.com',
             })
             return
           } catch (textShareError) {
