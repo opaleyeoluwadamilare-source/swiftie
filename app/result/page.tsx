@@ -36,9 +36,9 @@ function ResultPageContent() {
     // Check for payment status in URL params
     const paymentStatus = searchParams.get('payment')
     if (paymentStatus === 'success') {
-      // Payment successful - show confirmation message
+      // Payment successful - show confirmation message only
       setPaymentCompleted(true)
-      setShowUnlock(true)
+      // Don't automatically unlock - story will be sent via email
     } else if (paymentStatus === 'cancelled') {
       // Payment cancelled - show message
       setAmountError('Payment was cancelled. Please try again when ready.')
@@ -383,7 +383,8 @@ function ResultPageContent() {
               </div>
             )}
 
-            {/* Divider */}
+            {/* Divider - Only show unlock section if payment hasn't been completed */}
+            {!paymentCompleted && (
             <div className="border-t-2 border-gray-200 pt-4 sm:pt-6">
               <p className="text-base sm:text-lg md:text-xl font-bold text-purple-dark mb-4 sm:mb-6">
                 Okay but WHO are these people?
@@ -573,6 +574,7 @@ function ResultPageContent() {
                 </div>
               )}
             </div>
+            )}
 
             {/* Navigation Buttons */}
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-4 sm:pt-6">
