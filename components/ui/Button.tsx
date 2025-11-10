@@ -38,6 +38,8 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       'disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none',
       'active:scale-[0.98]',
       'overflow-hidden',
+      'text-center',
+      'px-4 sm:px-6 md:px-8',
       className
     )
 
@@ -62,9 +64,9 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     }
 
     const sizeStyles = {
-      sm: 'h-12 px-6 text-base',
-      md: 'h-14 px-8 text-lg',
-      lg: 'h-16 px-10 text-xl',
+      sm: 'h-12 text-sm sm:text-base',
+      md: 'h-14 text-base sm:text-lg',
+      lg: 'h-16 text-base sm:text-lg md:text-xl',
     }
 
     return (

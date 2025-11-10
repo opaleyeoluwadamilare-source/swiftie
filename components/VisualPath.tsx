@@ -1,6 +1,6 @@
 'use client'
 
-import React, { memo, useState, useEffect } from 'react'
+import React, { memo, useState, useEffect, useRef, useMemo } from 'react'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
 import { useReducedMotion } from '@/lib/hooks/useReducedMotion'
@@ -12,29 +12,29 @@ interface PathNode {
 }
 
 interface VisualPathProps {
-  connections?: number // Number of connections (3, 4, 5, etc.)
+  connections?: number // Number of intermediate people in the path (2-6). Example: 2 = YOU → Person1 → Person2 → TAYLOR
   firstName?: string | null // User's first name for personalization
 }
 
 // Generate path nodes based on connection count
-// "5 connections" means 5 steps in the path, so we need:
+// "X connections" means X intermediate people between you and Taylor
+// Example: 2 connections = YOU → Person1 → Person2 → TAYLOR
+// So we need:
 // - 1 "you" node
-// - (connections - 1) connection nodes (the intermediate people)
+// - connections number of intermediate connection nodes
 // - 1 "taylor" node
-// Total: connections + 1 nodes
+// Total: connections + 2 nodes
 const generatePathNodes = (connections: number = 4, isMobile: boolean = false): PathNode[] => {
   const nodes: PathNode[] = [{ type: 'you', label: 'YOU' }]
   
-  // Number of intermediate connection nodes (excluding you and Taylor)
-  // If connections = 5, we need 4 intermediate nodes
-  const intermediateNodes = connections - 1
+  // Number of intermediate connection nodes (the people between you and Taylor)
+  // If connections = 2, we need 2 intermediate nodes: YOU → Person1 → Person2 → TAYLOR
+  // If connections = 5, we need 5 intermediate nodes: YOU → P1 → P2 → P3 → P4 → P5 → TAYLOR
+  const intermediateNodes = connections
   
-  // On mobile, we might need to show fewer nodes for visibility, but let's try to show all
-  // We'll make them smaller and scrollable instead
-  const nodesToShow = intermediateNodes
-  
-  for (let i = 0; i < nodesToShow; i++) {
-    nodes.push({ type: 'connection', delay: i * 0.2 })
+  // Always show all nodes - we'll make them smaller if needed to fit
+  for (let i = 0; i < intermediateNodes; i++) {
+    nodes.push({ type: 'connection', delay: i * 0.15 })
   }
   
   // Always end with Taylor
@@ -98,81 +98,84 @@ const VisualPath = memo(({ connections, firstName }: VisualPathProps = {}) => {
   const prefersReducedMotion = useReducedMotion()
   const [imageError, setImageError] = useState(false)
   const [currentFormat, setCurrentFormat] = useState<'webp' | 'jpg' | 'png' | 'fallback'>('webp')
-  const [isMobile, setIsMobile] = useState(false)
-  const [containerWidth, setContainerWidth] = useState(0)
-
-  // Detect mobile screen size and container width
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 640)
-      // Get container width for dynamic sizing
-      const container = document.querySelector('[data-visual-path-container]')
-      if (container) {
-        setContainerWidth(container.clientWidth)
-      } else {
-        setContainerWidth(window.innerWidth - 32) // Account for padding
-      }
-    }
-    checkMobile()
-    window.addEventListener('resize', checkMobile)
-    // Check after a short delay to ensure DOM is ready
-    setTimeout(checkMobile, 100)
-    return () => window.removeEventListener('resize', checkMobile)
-  }, [])
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [scaleFactor, setScaleFactor] = useState(1)
 
   // Generate path nodes based on connections prop, or use default
-  const pathNodes = connections 
-    ? generatePathNodes(connections, isMobile)
-    : (isMobile ? mobilePathNodes : allPathNodes)
+  const connectionCount = connections || 4 // Default to 4 if not provided
+  const pathNodes = generatePathNodes(connectionCount, false)
   
   // Get user label - use first letter of firstName if provided, otherwise "YOU"
   const userLabel = firstName ? firstName.toUpperCase() : 'YOU'
   const userInitial = firstName ? firstName[0].toUpperCase() : null
 
-  // Calculate dynamic sizing based on number of nodes
-  // More nodes = smaller sizes to fit in viewport
+  // Calculate total nodes: 1 (you) + connections + 1 (taylor) = connections + 2
   const totalNodes = pathNodes.length
-  const getNodeSize = () => {
-    if (totalNodes <= 4) {
-      // 2-4 connections: larger nodes
-      return {
-        you: 'w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 lg:w-18 lg:h-18',
-        connection: 'w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 lg:w-16 lg:h-16',
-        taylor: 'w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 lg:w-18 lg:h-18',
-        gap: 'gap-2 sm:gap-3 md:gap-4 lg:gap-5',
-        arrow: 'w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 lg:w-6 lg:h-6',
-        text: 'text-base sm:text-lg md:text-xl lg:text-2xl',
-        icon: 'w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 lg:w-9 lg:h-9',
-        label: 'text-[10px] sm:text-xs md:text-sm lg:text-base',
-      }
-    } else if (totalNodes === 5) {
-      // 5 connections: medium nodes
-      return {
-        you: 'w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 lg:w-16 lg:h-16',
-        connection: 'w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 lg:w-14 lg:h-14',
-        taylor: 'w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 lg:w-16 lg:h-16',
-        gap: 'gap-1.5 sm:gap-2 md:gap-3 lg:gap-4',
-        arrow: 'w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-4 md:h-4 lg:w-5 lg:h-5',
-        text: 'text-sm sm:text-base md:text-lg lg:text-xl',
-        icon: 'w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 lg:w-8 lg:h-8',
-        label: 'text-[9px] sm:text-[10px] md:text-xs lg:text-sm',
-      }
-    } else {
-      // 6+ connections: smaller nodes
-      return {
-        you: 'w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 lg:w-14 lg:h-14',
-        connection: 'w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 lg:w-12 lg:h-12',
-        taylor: 'w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 lg:w-14 lg:h-14',
-        gap: 'gap-1 sm:gap-1.5 md:gap-2 lg:gap-3',
-        arrow: 'w-2 h-2 sm:w-2.5 sm:h-2.5 md:w-3 md:h-3 lg:w-4 lg:h-4',
-        text: 'text-xs sm:text-sm md:text-base lg:text-lg',
-        icon: 'w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-7 lg:h-7',
-        label: 'text-[8px] sm:text-[9px] md:text-[10px] lg:text-xs',
-      }
-    }
-  }
 
-  const sizes = getNodeSize()
+  // Calculate responsive base sizes based on connection count
+  // These will be scaled by the scaleFactor
+  const baseSizes = useMemo(() => {
+    // Base sizes that work well for different connection counts
+    // These are scaled down proportionally based on number of connections
+    const baseScale = Math.max(0.6, 1 - (connectionCount - 2) * 0.1) // Scale down as connections increase
+    
+    return {
+      nodeSize: Math.round(56 * baseScale), // Base node size
+      connectionSize: Math.round(48 * baseScale), // Connection node size (slightly smaller)
+      arrowSize: Math.round(20 * baseScale), // Arrow size
+      gapSize: Math.round(8 * baseScale), // Gap between elements
+      fontSize: Math.max(10, Math.round(14 * baseScale)), // Font size
+      iconSize: Math.round(24 * baseScale), // Icon size
+      labelSize: Math.max(8, Math.round(10 * baseScale)), // Label font size
+    }
+  }, [connectionCount])
+
+  // Calculate scale factor to fit all nodes in container
+  useEffect(() => {
+    const calculateScale = () => {
+      if (!containerRef.current) return
+
+      const container = containerRef.current
+      const containerWidth = container.clientWidth
+      const containerPadding = 32 // Account for padding (px-2 sm:px-4 = 8-16px)
+      const availableWidth = containerWidth - containerPadding
+
+      // Calculate total width needed using actual base sizes
+      // We have: 1 you node + (connections) connection nodes + 1 taylor node
+      // Arrows: (totalNodes - 1) arrows
+      // Gaps: (totalNodes - 1) gaps
+      const youNodeWidth = baseSizes.nodeSize
+      const connectionNodesWidth = (totalNodes - 2) * baseSizes.connectionSize // All connection nodes
+      const taylorNodeWidth = baseSizes.nodeSize
+      const arrowsWidth = (totalNodes - 1) * baseSizes.arrowSize
+      const gapsWidth = (totalNodes - 1) * baseSizes.gapSize
+      
+      const totalNeededWidth = youNodeWidth + connectionNodesWidth + taylorNodeWidth + arrowsWidth + gapsWidth
+
+      // Calculate scale factor
+      let scale = 1
+      if (totalNeededWidth > availableWidth) {
+        scale = availableWidth / totalNeededWidth
+        // Add some padding (0.92 = 92% of available space to ensure fit)
+        scale = scale * 0.92
+      }
+
+      // Clamp scale between reasonable bounds
+      scale = Math.max(0.35, Math.min(1.1, scale))
+      setScaleFactor(scale)
+    }
+
+    calculateScale()
+    window.addEventListener('resize', calculateScale)
+    
+    // Recalculate after a short delay to ensure DOM is ready
+    const timeout = setTimeout(calculateScale, 100)
+    
+    return () => {
+      window.removeEventListener('resize', calculateScale)
+      clearTimeout(timeout)
+    }
+  }, [totalNodes, connections, baseSizes])
 
   // Try formats in priority order: WebP -> JPG -> PNG -> Fallback
   const handleImageError = () => {
@@ -238,24 +241,22 @@ const VisualPath = memo(({ connections, firstName }: VisualPathProps = {}) => {
 
   return (
     <div 
+      ref={containerRef}
       data-visual-path-container
       className="w-full mb-4 sm:mb-6 px-2 sm:px-4"
       style={{ 
         maxWidth: '100%',
-        overflow: 'hidden'
+        overflow: 'hidden',
       }}
     >
       <div
-        className={cn(
-          "flex items-center justify-center flex-nowrap w-full",
-          sizes.gap
-        )}
+        className="flex items-center justify-center flex-nowrap w-full"
         role="img"
         aria-label="Visual representation of connection path from you to Taylor Swift"
         style={{
-          // Ensure everything fits in one viewport
-          maxWidth: '100%',
-          minWidth: 0, // Allow flex items to shrink
+          transform: `scale(${scaleFactor})`,
+          transformOrigin: 'center',
+          gap: `${baseSizes.gapSize}px`,
         }}
       >
       {pathNodes.map((node, index) => {
@@ -264,102 +265,88 @@ const VisualPath = memo(({ connections, firstName }: VisualPathProps = {}) => {
         return (
           <React.Fragment key={index}>
             {/* Node */}
-            <div className="flex flex-col items-center flex-shrink-0" style={{ minWidth: 0 }}>
+            <div className="flex flex-col items-center flex-shrink-0">
               {node.type === 'you' && (
                 <div
-                  className={cn(
-                    sizes.you,
-                    'rounded-full border-2 border-purple-gradient-start flex-shrink-0',
-                    'flex items-center justify-center',
-                    'bg-gradient-to-br from-white via-purple-50 to-pink-50',
-                    'shadow-md sm:shadow-lg',
-                    'relative group',
-                    'hover:scale-105 transition-all duration-300'
-                  )}
-                  style={{ borderWidth: '2px' }}
+                  className="rounded-full border-2 border-purple-gradient-start flex-shrink-0 flex items-center justify-center bg-gradient-to-br from-white via-purple-50 to-pink-50 shadow-md relative group hover:scale-105 transition-all duration-300"
+                  style={{ 
+                    width: `${baseSizes.nodeSize}px`,
+                    height: `${baseSizes.nodeSize}px`,
+                    borderWidth: '2px'
+                  }}
                   aria-label={firstName || "You"}
                 >
-                  <div className="absolute inset-0 rounded-full bg-gradient-to-br from-purple-400/20 to-pink-400/20 blur-md sm:blur-lg group-hover:blur-xl transition-all duration-300" />
+                  <div className="absolute inset-0 rounded-full bg-gradient-to-br from-purple-400/20 to-pink-400/20 blur-md group-hover:blur-xl transition-all duration-300" />
                   {userInitial ? (
-                    <span className={cn(
-                      'text-purple-gradient-start relative z-10 font-black',
-                      sizes.text
-                    )}>
+                    <span 
+                      className="text-purple-gradient-start relative z-10 font-black"
+                      style={{ fontSize: `${baseSizes.fontSize}px` }}
+                    >
                       {userInitial}
                     </span>
                   ) : (
-                    <UserIcon className={cn(
-                      'text-purple-gradient-start relative z-10',
-                      sizes.icon
-                    )} />
+                    <UserIcon 
+                      className="text-purple-gradient-start relative z-10"
+                      style={{ width: `${baseSizes.iconSize}px`, height: `${baseSizes.iconSize}px` }}
+                    />
                   )}
                 </div>
               )}
 
               {node.type === 'connection' && (
                 <div
-                  className={cn(
-                    sizes.connection,
-                    'flex items-center justify-center flex-shrink-0',
-                    'rounded-full',
-                    'bg-gradient-to-br from-purple-100/90 via-pink-100/90 to-purple-100/90',
-                    'border-2 border-purple-200/70',
-                    'shadow-sm sm:shadow-md backdrop-blur-sm',
-                    !prefersReducedMotion && 'animate-pulse-gentle',
-                    'relative group',
-                    'hover:scale-110 hover:border-purple-300 transition-all duration-300'
-                  )}
-                  style={!prefersReducedMotion && node.delay ? { animationDelay: `${node.delay}s` } : undefined}
+                  className="flex items-center justify-center flex-shrink-0 rounded-full bg-gradient-to-br from-purple-100/90 via-pink-100/90 to-purple-100/90 border-2 border-purple-200/70 shadow-sm backdrop-blur-sm relative group hover:scale-110 hover:border-purple-300 transition-all duration-300"
+                  style={{ 
+                    width: `${baseSizes.connectionSize}px`,
+                    height: `${baseSizes.connectionSize}px`,
+                    animationDelay: !prefersReducedMotion && node.delay ? `${node.delay}s` : undefined
+                  }}
                   aria-label="Connection"
                 >
-                  <div className="absolute inset-0 rounded-full bg-gradient-to-br from-purple-300/20 to-pink-300/20 blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  <ConnectionIcon className={cn(
-                    sizes.icon,
-                    'text-purple-gradient-start/80 relative z-10'
-                  )} />
+                  {!prefersReducedMotion && <div className="absolute inset-0 rounded-full bg-gradient-to-br from-purple-300/20 to-pink-300/20 blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300 animate-pulse-gentle" />}
+                  <ConnectionIcon 
+                    className="text-purple-gradient-start/80 relative z-10"
+                    style={{ width: `${baseSizes.iconSize}px`, height: `${baseSizes.iconSize}px` }}
+                  />
                 </div>
               )}
 
               {node.type === 'taylor' && (
                 <div
-                  className={cn(
-                    sizes.taylor,
-                    'rounded-full flex items-center justify-center flex-shrink-0',
-                    'overflow-hidden border-2 border-purple-gradient-start',
-                    'shadow-md sm:shadow-lg',
-                    'bg-gradient-to-br from-purple-100 to-pink-100',
-                    'relative group',
-                    'hover:scale-105 transition-all duration-300'
-                  )}
-                  style={{ borderWidth: '2px' }}
+                  className="rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden border-2 border-purple-gradient-start shadow-md bg-gradient-to-br from-purple-100 to-pink-100 relative group hover:scale-105 transition-all duration-300"
+                  style={{ 
+                    width: `${baseSizes.nodeSize}px`,
+                    height: `${baseSizes.nodeSize}px`,
+                    borderWidth: '2px'
+                  }}
                   aria-label="Taylor Swift"
                 >
-                  <div className="absolute inset-0 rounded-full bg-gradient-to-br from-purple-400/30 to-pink-400/30 blur-md sm:blur-lg group-hover:blur-xl transition-all duration-300" />
+                  <div className="absolute inset-0 rounded-full bg-gradient-to-br from-purple-400/30 to-pink-400/30 blur-md group-hover:blur-xl transition-all duration-300" />
                   {currentFormat !== 'fallback' ? (
                     <Image
                       src={getImageSrc()}
                       alt="Taylor Swift"
-                      width={112}
-                      height={112}
+                      width={baseSizes.nodeSize}
+                      height={baseSizes.nodeSize}
                       className="w-full h-full object-cover rounded-full relative z-10"
                       priority
                       onError={handleImageError}
                       unoptimized={process.env.NODE_ENV === 'development'}
                     />
                   ) : (
-                    <span className={cn(
-                      'relative z-10',
-                      sizes.text
-                    )}>✨</span>
+                    <span 
+                      className="relative z-10"
+                      style={{ fontSize: `${baseSizes.fontSize}px` }}
+                    >✨</span>
                   )}
                 </div>
               )}
 
               {node.label && (
-                <span className={cn(
-                  sizes.label,
-                  'font-bold text-purple-dark mt-1 sm:mt-1.5 md:mt-2 tracking-wide whitespace-nowrap'
-                )}>
+                <span 
+                  className="font-bold text-purple-dark mt-1 tracking-wide whitespace-nowrap"
+                  style={{ fontSize: `${baseSizes.labelSize}px` }}
+                >
                   {node.type === 'you' ? userLabel : node.label}
                 </span>
               )}
@@ -370,16 +357,15 @@ const VisualPath = memo(({ connections, firstName }: VisualPathProps = {}) => {
               <div
                 className="flex-shrink-0 relative"
                 aria-hidden="true"
+                style={{ width: `${baseSizes.arrowSize}px`, height: `${baseSizes.arrowSize}px` }}
               >
                 <svg
-                  className={cn(
-                    sizes.arrow,
-                    'text-purple-gradient-start'
-                  )}
+                  className="text-purple-gradient-start"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
                   strokeWidth="2.5"
+                  style={{ width: '100%', height: '100%' }}
                 >
                   <path
                     strokeLinecap="round"
@@ -389,14 +375,12 @@ const VisualPath = memo(({ connections, firstName }: VisualPathProps = {}) => {
                 </svg>
                 <div className="absolute inset-0 blur-sm opacity-30">
                   <svg
-                    className={cn(
-                      sizes.arrow,
-                      'text-purple-300'
-                    )}
+                    className="text-purple-300"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
                     strokeWidth="2.5"
+                    style={{ width: '100%', height: '100%' }}
                   >
                     <path
                       strokeLinecap="round"

@@ -27,62 +27,70 @@ function hashString(str: string): number {
 
 /**
  * Calculate connection count based on user inputs
- * Returns a number between 2-6 connections
+ * Returns a number between 2-6 connections (intermediate people in the path)
+ * 
+ * Semantics: "X connections" means X intermediate people between you and Taylor
+ * Example: 2 connections = YOU → Person1 → Person2 → TAYLOR
  */
 export function calculateConnections(data: QuizData): number {
-  let connectionScore = 5 // Base: 5 connections (most common)
+  // Base: 4 intermediate connections (most common)
+  // This means: YOU → Person1 → Person2 → Person3 → Person4 → TAYLOR
+  let connectionScore = 4.0
   
-  // Music cities = closer connections
+  // Music cities = closer connections (reduce by 0.8-1.2)
   const musicCities = ['nashville', 'los angeles', 'new york', 'nyc', 'london', 'toronto', 'austin']
   const cityLower = (data.city || '').toLowerCase()
   if (musicCities.some(mc => cityLower.includes(mc))) {
-    connectionScore -= 1.5 // Music cities = 1-2 connections closer
+    connectionScore -= 1.0 // Music cities = 1 connection closer
   }
   
-  // Music/Entertainment industry = much closer
+  // Music/Entertainment industry = much closer (reduce by 1.5-2.0)
   if (data.industry === 'music') {
-    connectionScore -= 2 // Music industry = 2-3 connections closer
+    connectionScore -= 1.8 // Music industry = ~2 connections closer
   } else if (data.industry === 'creative' || data.industry === 'marketing') {
-    connectionScore -= 0.5 // Creative/marketing = slightly closer
+    connectionScore -= 0.6 // Creative/marketing = slightly closer
   }
   
-  // Music schools = closer
+  // Music schools = closer (reduce by 0.8-1.0)
   const musicSchools = ['berklee', 'belmont', 'full sail', 'juilliard', 'usc', 'nyu', 'vanderbilt']
   const schoolLower = (data.school || '').toLowerCase()
   if (musicSchools.some(ms => schoolLower.includes(ms))) {
-    connectionScore -= 1 // Music schools = 1 connection closer
+    connectionScore -= 0.9 // Music schools = ~1 connection closer
   }
   
-  // Music companies = closer
+  // Music companies = closer (reduce by 1.0-1.5)
   const musicCompanies = ['republic', 'big machine', 'universal', 'sony', 'warner', 'spotify', 'apple music', 'record label']
   const companyLower = (data.company || '').toLowerCase()
   if (musicCompanies.some(mc => companyLower.includes(mc))) {
-    connectionScore -= 1.5 // Music companies = 1-2 connections closer
+    connectionScore -= 1.2 // Music companies = ~1 connection closer
   }
   
   // Age factor (younger = potentially closer through social media)
   if (data.ageRange === '18-24') {
-    connectionScore -= 0.3 // Slightly closer
+    connectionScore -= 0.4 // Slightly closer
   } else if (data.ageRange === '45+') {
-    connectionScore += 0.5 // Slightly further
+    connectionScore += 0.6 // Slightly further
   }
   
-  // Experience level (more experience = more connections)
+  // Experience level (more experience = more connections = closer)
   if (data.experienceLevel === '10+') {
     connectionScore -= 0.5 // More experience = slightly closer
   } else if (data.experienceLevel === '0-2') {
-    connectionScore += 0.3 // Less experience = slightly further
+    connectionScore += 0.4 // Less experience = slightly further
   }
   
-  // Add some variation based on hash of all inputs combined
-  const combinedInput = `${data.city || ''}-${data.school || ''}-${data.company || ''}-${data.industry || ''}`
+  // Add deterministic variation based on hash of all inputs combined
+  // This ensures same inputs = same results, but different inputs = varied results
+  const combinedInput = `${data.city || ''}-${data.school || ''}-${data.company || ''}-${data.industry || ''}-${data.ageRange || ''}-${data.experienceLevel || ''}`
   const hashValue = hashString(combinedInput)
   const variation = (hashValue % 100) / 100 // 0-0.99 variation
   
-  // Apply variation (can add or subtract up to 0.8 connections)
-  connectionScore += (variation - 0.5) * 1.6
+  // Apply variation (can add or subtract up to 0.7 connections)
+  // This creates natural distribution while keeping results deterministic
+  connectionScore += (variation - 0.5) * 1.4
   
-  // Clamp between 2 and 6 connections
+  // Clamp between 2 and 6 intermediate connections
+  // Round to nearest integer for clean numbers
   const connections = Math.max(2, Math.min(6, Math.round(connectionScore)))
   
   return connections
@@ -152,4 +160,5 @@ export function calculateConnectionResult(data: QuizData): {
     rarity: `${rarity}%`
   }
 }
+
 

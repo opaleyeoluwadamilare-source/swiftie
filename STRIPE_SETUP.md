@@ -88,3 +88,4 @@ If Stripe keys are not configured, the app runs in "mock mode":
 - Store payment status in your database
 - Use Stripe's test mode for development
 
+

@@ -414,7 +414,7 @@ export default function QuizPage() {
                     handleNext()
                   }}
                   variant="outline"
-                  className="w-full py-3 sm:py-4 text-base sm:text-lg touch-manipulation"
+                  className="w-full py-3 sm:py-4 touch-manipulation min-h-[48px] sm:min-h-[52px] text-sm sm:text-base md:text-lg flex items-center justify-center"
                 >
                   Skip this question
                 </Button>
@@ -527,9 +527,9 @@ export default function QuizPage() {
                     handleNext()
                   }}
                   variant="outline"
-                  className="w-full py-3 sm:py-4 text-base sm:text-lg touch-manipulation"
+                  className="w-full py-3 sm:py-4 touch-manipulation min-h-[48px] sm:min-h-[52px] text-sm sm:text-base md:text-lg flex items-center justify-center whitespace-normal sm:whitespace-nowrap"
                 >
-                  Continue as "Swiftie"
+                  Continue as &quot;Swiftie&quot;
                 </Button>
               </div>
             </div>
@@ -545,20 +545,27 @@ export default function QuizPage() {
               <Button
                 onClick={handleBack}
                 variant="outline"
-                className="flex-1 py-3 sm:py-4 text-base sm:text-lg touch-manipulation min-h-[48px] sm:min-h-[52px]"
+                className="flex-1 py-3 sm:py-4 touch-manipulation min-h-[48px] sm:min-h-[52px] text-sm sm:text-base md:text-lg flex items-center justify-center gap-1 sm:gap-2"
               >
-                ← Back
+                <span className="flex-shrink-0">←</span>
+                <span>Back</span>
               </Button>
             )}
             <Button
               onClick={handleNext}
               disabled={!canProceed()}
               className={cn(
-                'flex-1 py-3 sm:py-4 text-base sm:text-lg touch-manipulation min-h-[48px] sm:min-h-[52px]',
+                'flex-1 py-3 sm:py-4 touch-manipulation min-h-[48px] sm:min-h-[52px]',
+                'text-sm sm:text-base md:text-lg',
+                'whitespace-nowrap overflow-hidden text-ellipsis',
+                'flex items-center justify-center gap-1 sm:gap-2',
                 currentQuestion === 1 && 'ml-auto'
               )}
             >
-              {currentQuestion === totalQuestions ? 'Find My Connection! →' : 'Next →'}
+              <span className="truncate">
+                {currentQuestion === totalQuestions ? 'Find My Connection!' : 'Next'}
+              </span>
+              <span className="flex-shrink-0">→</span>
             </Button>
           </div>
           </div>

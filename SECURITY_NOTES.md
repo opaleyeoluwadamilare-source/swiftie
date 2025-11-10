@@ -53,3 +53,4 @@ If you've already committed real API keys to git:
 - **Database URL:** Render Dashboard → Your Database → Connection String
 - **Webhook Secret:** Stripe Dashboard → Developers → Webhooks → Your Webhook → Signing Secret
 
+

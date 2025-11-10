@@ -108,3 +108,4 @@ The checkout session is configured with:
 
 The payment buttons will appear automatically when all requirements are met!
 
+

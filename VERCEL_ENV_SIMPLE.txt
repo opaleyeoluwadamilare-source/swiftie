@@ -30,3 +30,4 @@ DATABASE_URL=postgresql://YOUR_ACTUAL_DATABASE_URL_HERE
 #
 # ❌ SKIP FOR NOW: STRIPE_WEBHOOK_SECRET (add after webhook setup)
 
+

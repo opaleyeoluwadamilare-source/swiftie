@@ -95,17 +95,22 @@ function ResultPageContent() {
   const handleShare = async () => {
     if (!result || !cardRef.current) return
     
-    const shareName = result.firstName || 'Swiftie'
-    const shareText = result.firstName
-      ? `${shareName} is ${result.connections} connections from Taylor Swift! In the top ${result.rarity} of Swifties! Find your connection too!`
-      : `I'm ${result.connections} connections from Taylor Swift! In the top ${result.rarity} of Swifties! Find your connection too!`
+    // Clean and format the name for sharing
+    const rawFirstName = result.firstName?.trim() || ''
+    const shareName = rawFirstName !== '' ? rawFirstName : 'Swiftie'
+    const hasFirstName = rawFirstName !== ''
+    
+    // Personalized share message with website URL
+    const shareText = hasFirstName
+      ? `${shareName} is ${result.connections} connections from Taylor Swift! In the top ${result.rarity} of Swifties! 💜 Find your connection at swifties.getsanely.com`
+      : `I'm ${result.connections} connections from Taylor Swift! In the top ${result.rarity} of Swifties! 💜 Find your connection at swifties.getsanely.com`
     
     try {
-      // Generate image for sharing
+      // Generate image for sharing (1080x1920 for IG Story format)
       const dataUrl = await toPng(cardRef.current, {
         quality: 1.0,
-        pixelRatio: 2,
-        backgroundColor: '#8b5cf6',
+        pixelRatio: 3, // Higher quality for crisp images (3x for retina displays)
+        backgroundColor: '#fef3f8',
         cacheBust: true,
       })
       
@@ -167,11 +172,11 @@ function ResultPageContent() {
     try {
       const displayNameForFile = result.firstName || 'Swiftie'
       
-      // Generate high-quality image (1200x630 for social media)
+      // Generate high-quality image (1080x1920 for IG Story format)
       const dataUrl = await toPng(cardRef.current, {
         quality: 1.0,
-        pixelRatio: 2, // Higher quality for crisp images
-        backgroundColor: '#8b5cf6',
+        pixelRatio: 3, // Higher quality for crisp images (3x for retina displays)
+        backgroundColor: '#fef3f8',
         cacheBust: true,
       })
       
@@ -225,17 +230,20 @@ function ResultPageContent() {
   }
 
   // Use firstName if provided, otherwise use "Swiftie" (they chose the default)
-  const displayName = result.firstName || 'Swiftie'
-  const username = result.firstName 
-    ? `@${result.firstName.toLowerCase()}swiftie` 
+  // Clean and format the name properly
+  const rawFirstName = result.firstName?.trim() || ''
+  const displayName = rawFirstName !== '' ? rawFirstName : 'Swiftie'
+  const username = rawFirstName !== ''
+    ? `@${rawFirstName.toLowerCase().replace(/\s+/g, '')}swiftie` 
     : '@swiftie'
   
-  // Personalize messages
-  const rarityMessage = result.firstName 
+  // Personalize messages - use cleaned displayName
+  const hasFirstName = rawFirstName !== ''
+  const rarityMessage = hasFirstName
     ? `${displayName}, only ${result.rarity} of Swifties are this close! 💜`
     : `Only ${result.rarity} of Swifties are this close! 💜`
   
-  const vipMessage = result.firstName
+  const vipMessage = hasFirstName
     ? `${displayName}, you're basically VIP status! ✨`
     : `You're basically VIP status! ✨`
 
@@ -250,15 +258,16 @@ function ResultPageContent() {
 
   return (
     <>
-      {/* Hidden Shareable Card for Image Generation */}
+      {/* Hidden Shareable Card for Image Generation - IG Story Format (9:16) */}
       {result && (
-        <div className="fixed -left-[9999px] -top-[9999px] opacity-0 pointer-events-none" style={{ width: '1200px', height: '630px' }}>
-          <div ref={cardRef} style={{ width: '1200px', height: '630px' }}>
+        <div className="fixed -left-[9999px] -top-[9999px] opacity-0 pointer-events-none" style={{ width: '1080px', height: '1920px' }}>
+          <div ref={cardRef} style={{ width: '1080px', height: '1920px' }}>
             <ShareableCard
               displayName={displayName}
               connections={result.connections}
               rarity={result.rarity}
               username={username}
+              firstName={hasFirstName ? rawFirstName : null}
             />
           </div>
         </div>
@@ -306,19 +315,21 @@ function ResultPageContent() {
               <Button 
                 variant="outline" 
                 size="lg" 
-                className="flex-1 py-3 sm:py-4 text-base sm:text-lg touch-manipulation min-h-[48px] sm:min-h-[52px]"
+                className="flex-1 py-3 sm:py-4 touch-manipulation min-h-[48px] sm:min-h-[52px] text-sm sm:text-base md:text-lg flex items-center justify-center gap-2"
                 onClick={handleShare}
               >
-                Share My Card 📸
+                <span className="flex-shrink-0">📸</span>
+                <span className="truncate">Share My Card</span>
               </Button>
               <Button 
                 variant="outline" 
                 size="lg" 
-                className="flex-1 py-3 sm:py-4 text-base sm:text-lg touch-manipulation min-h-[48px] sm:min-h-[52px]"
+                className="flex-1 py-3 sm:py-4 touch-manipulation min-h-[48px] sm:min-h-[52px] text-sm sm:text-base md:text-lg flex items-center justify-center gap-2"
                 onClick={handleDownload}
                 disabled={isGeneratingImage}
               >
-                {isGeneratingImage ? 'Generating... ✨' : 'Download to Camera Roll 📥'}
+                <span className="flex-shrink-0">{isGeneratingImage ? '✨' : '📥'}</span>
+                <span className="truncate">{isGeneratingImage ? 'Generating...' : 'Download to Camera Roll'}</span>
               </Button>
             </div>
 
@@ -357,9 +368,10 @@ function ResultPageContent() {
                 <Button
                   onClick={() => setShowUnlock(true)}
                   size="lg"
-                  className="w-full mb-4 sm:mb-6 py-3 sm:py-4 text-base sm:text-lg touch-manipulation min-h-[48px] sm:min-h-[52px]"
+                  className="w-full mb-4 sm:mb-6 py-3 sm:py-4 touch-manipulation min-h-[48px] sm:min-h-[52px] text-sm sm:text-base md:text-lg flex items-center justify-center gap-2"
                 >
-                  🔓 Unlock Your Full Story
+                  <span>🔓</span>
+                  <span>Unlock Your Full Story</span>
                 </Button>
               ) : (
                 <div className="space-y-4 sm:space-y-5 md:space-y-6">
@@ -476,7 +488,7 @@ function ResultPageContent() {
                           <Button
                             variant="secondary"
                             size="lg"
-                            className="w-full mt-2 bg-white text-purple-gradient-start hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed py-3 sm:py-4 text-base sm:text-lg touch-manipulation min-h-[48px] sm:min-h-[52px]"
+                            className="w-full mt-2 bg-white text-purple-gradient-start hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed py-3 sm:py-4 touch-manipulation min-h-[48px] sm:min-h-[52px] text-sm sm:text-base md:text-lg flex items-center justify-center"
                       onClick={async () => {
                         const finalAmount = customAmount ? parseFloat(customAmount) : (selectedAmount || 13)
                         if (finalAmount && finalAmount >= 13) {
@@ -539,13 +551,13 @@ function ResultPageContent() {
               <Button
                 onClick={() => router.push('/quiz')}
                 variant="outline"
-                className="flex-1 py-3 sm:py-4 text-base sm:text-lg touch-manipulation min-h-[48px] sm:min-h-[52px]"
+                className="flex-1 py-3 sm:py-4 touch-manipulation min-h-[48px] sm:min-h-[52px] text-sm sm:text-base md:text-lg flex items-center justify-center"
               >
                 Take Quiz Again
               </Button>
               <Button
                 onClick={() => router.push('/')}
-                className="flex-1 py-3 sm:py-4 text-base sm:text-lg touch-manipulation min-h-[48px] sm:min-h-[52px]"
+                className="flex-1 py-3 sm:py-4 touch-manipulation min-h-[48px] sm:min-h-[52px] text-sm sm:text-base md:text-lg flex items-center justify-center"
               >
                 Back to Home
               </Button>

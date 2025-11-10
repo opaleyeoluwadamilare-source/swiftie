@@ -7,6 +7,9 @@ module.exports = {
   ],
   theme: {
     extend: {
+      screens: {
+        'xs': '475px',
+      },
       colors: {
         'purple-dark': '#1a1b2e',
         'purple-gradient-start': '#8b5cf6',

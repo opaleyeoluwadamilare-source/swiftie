@@ -69,3 +69,4 @@ If you get "git is not recognized", you need to install Git:
 3. Restart your terminal
 4. Try the steps again
 
+
