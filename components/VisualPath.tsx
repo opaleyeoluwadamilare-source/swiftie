@@ -61,9 +61,10 @@ const mobilePathNodes: PathNode[] = [
 ]
 
 // Premium SVG User Icon Component
-const UserIcon = ({ className }: { className?: string }) => (
+const UserIcon = ({ className, style }: { className?: string; style?: React.CSSProperties }) => (
   <svg
     className={className}
+    style={style}
     viewBox="0 0 24 24"
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
@@ -81,9 +82,10 @@ const UserIcon = ({ className }: { className?: string }) => (
 )
 
 // Elegant Connection Icon - Simpler for mobile
-const ConnectionIcon = ({ className }: { className?: string }) => (
+const ConnectionIcon = ({ className, style }: { className?: string; style?: React.CSSProperties }) => (
   <svg
     className={className}
+    style={style}
     viewBox="0 0 24 24"
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
