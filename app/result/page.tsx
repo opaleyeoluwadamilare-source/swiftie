@@ -96,36 +96,60 @@ function ResultPageContent() {
   // Helper function to wait for all images to load
   const waitForImages = (element: HTMLElement): Promise<void> => {
     return new Promise((resolve) => {
-      const images = element.querySelectorAll('img')
-      if (images.length === 0) {
-        resolve()
-        return
-      }
-      
-      let loadedCount = 0
-      const totalImages = images.length
-      
-      const checkComplete = () => {
-        loadedCount++
-        if (loadedCount === totalImages) {
-          // Small delay to ensure rendering is complete
-          setTimeout(resolve, 200)
-        }
-      }
-      
-      images.forEach((img) => {
-        if (img.complete && img.naturalWidth > 0) {
-          checkComplete()
-        } else {
-          img.onload = checkComplete
-          img.onerror = checkComplete // Continue even if image fails
-        }
-      })
-      
-      // Timeout after 5 seconds
+      // Wait a bit for Next.js Image components to render
       setTimeout(() => {
-        resolve()
-      }, 5000)
+        const images = element.querySelectorAll('img')
+        if (images.length === 0) {
+          // Extra delay to ensure everything is rendered
+          setTimeout(resolve, 300)
+          return
+        }
+        
+        let loadedCount = 0
+        const totalImages = images.length
+        let resolved = false
+        
+        const checkComplete = () => {
+          if (resolved) return
+          loadedCount++
+          if (loadedCount === totalImages) {
+            resolved = true
+            // Extra delay to ensure rendering is complete, especially for Next.js Image components
+            setTimeout(resolve, 500)
+          }
+        }
+        
+        images.forEach((img) => {
+          // Check if image is already loaded
+          if (img.complete && img.naturalWidth > 0 && img.naturalHeight > 0) {
+            checkComplete()
+          } else {
+            // Wait for image to load
+            img.onload = () => {
+              // Double check it's actually loaded
+              if (img.complete && img.naturalWidth > 0) {
+                checkComplete()
+              }
+            }
+            img.onerror = checkComplete // Continue even if image fails
+            // Force load if src is set
+            if (img.src && !img.complete) {
+              const tempImg = new Image()
+              tempImg.onload = checkComplete
+              tempImg.onerror = checkComplete
+              tempImg.src = img.src
+            }
+          }
+        })
+        
+        // Timeout after 8 seconds (longer for mobile/slow connections)
+        setTimeout(() => {
+          if (!resolved) {
+            resolved = true
+            resolve()
+          }
+        }, 8000)
+      }, 200)
     })
   }
 
@@ -164,50 +188,42 @@ function ResultPageContent() {
       const file = new File([blob], fileName, { type: 'image/png' })
       
       // Try Web Share API with file (works on mobile and some desktop browsers)
+      // Prioritize sharing the image file on mobile
       if (navigator.share) {
         const shareTitle = `${shareName} is ${result.connections} connections from Taylor Swift!`
         
         try {
-          // Check if we can share files
-          const shareData: any = {
+          // First, try to share with the image file (this is what we want on mobile)
+          if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            await navigator.share({
+              files: [file],
+              title: shareTitle,
+              text: shareText,
+            })
+            // Success - user shared the image
+            return
+          }
+          
+          // If file sharing not supported, try with text and URL
+          await navigator.share({
             title: shareTitle,
             text: shareText,
             url: 'https://swifties.getsanely.com',
-          }
-          
-          // Try to share with file (for Instagram Stories, messaging apps)
-          if (navigator.canShare && navigator.canShare({ files: [file] })) {
-            shareData.files = [file]
-          }
-          
-          await navigator.share(shareData)
+          })
           // Success - user shared
           return
         } catch (shareError: any) {
-          // User cancelled or share failed
+          // User cancelled - that's fine, just return silently
           if (shareError.name === 'AbortError') {
-            // User cancelled - that's fine, just return
             return
           }
-          
-          // If file sharing failed, try without file
-          try {
-            await navigator.share({
-              title: shareTitle,
-              text: shareText,
-              url: 'https://swifties.getsanely.com',
-            })
-            return
-          } catch (textShareError) {
-            // Continue to fallback
-            console.log('Text-only share also failed:', textShareError)
-          }
+          // If share failed, continue to download fallback
+          console.log('Share failed, falling back to download:', shareError)
         }
       }
       
-      // Fallback: Download the image and show instructions
-      // This works for Instagram Stories (user can download and upload)
-      // Reuse the blob we already created
+      // Fallback: Download the image (for browsers that don't support Web Share API)
+      // On mobile, this will save to camera roll/gallery
       const blobUrl = URL.createObjectURL(blob)
       
       const link = document.createElement('a')
@@ -223,12 +239,15 @@ function ResultPageContent() {
         URL.revokeObjectURL(blobUrl)
       }, 100)
       
-      // Show helpful message
-      alert(`Card downloaded! You can now:\n\n• Share to Instagram Stories: Open Instagram → Stories → Upload the downloaded image\n• Share to messaging apps: Attach the downloaded image\n\nOr copy this text to share:\n\n${shareText}`)
+      // Only show message on desktop (mobile will just download)
+      if (window.innerWidth > 768) {
+        // Brief, non-intrusive message
+        console.log('Image downloaded! Share it from your downloads folder.')
+      }
       
     } catch (err) {
       console.error('Share error:', err)
-      alert('Failed to share. Please try downloading the card instead.')
+      // Silent failure - user can try again or use download button
     } finally {
       setIsSharing(false)
     }
@@ -278,7 +297,8 @@ function ResultPageContent() {
     } catch (error) {
       console.error('Error generating image:', error)
       setIsGeneratingImage(false)
-      alert('Failed to generate image. Please try again.')
+      // Silent failure - user can try again
+      console.error('Failed to generate image. Please try again.')
     }
   }
 

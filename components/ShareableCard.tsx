@@ -82,7 +82,8 @@ export default function ShareableCard({
             width={album.position.size}
             height={album.position.size}
             className="object-cover rounded-2xl"
-            unoptimized={process.env.NODE_ENV === 'development'}
+            unoptimized={true}
+            priority={true}
           />
         </div>
       ))}
